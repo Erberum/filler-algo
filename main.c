@@ -182,8 +182,6 @@ int8_t minimax(const GameState* state, int depth, bool maximising, int8_t alpha,
     states_explored++;
     // Areas for improvement: gamestates pool with preallocated memory
     // Multi-Threading
-    // Alpha-beta prunning
-    // Do most functions inline
     uint8_t occupied = tiles_occupied(state);
     if(depth == 0 || occupied == 56) {
         if(occupied > max_tiles_occupied) {
