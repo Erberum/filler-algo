@@ -8,6 +8,8 @@
 #define ROWS 7
 #define COLS 8
 #define COLORS 6
+// Colors of both players cannot be chosen
+#define ACTIONS (COLORS - 2)
 
 #define BIT_POSITION(row, col) (row * COLS + col)
 #define POS_MASK(row, col) ((uint64_t) 1 << BIT_POSITION(row, col))
@@ -78,6 +80,10 @@ int8_t score_state(const GameState* state) {
     return __builtin_popcountll(state->players[0]) - __builtin_popcountll(state->players[1]);
 }
 
+uint8_t tiles_occupied(const GameState* state) {
+    return __builtin_popcountll(state->players[0]) + __builtin_popcountll(state->players[1]);
+}
+
 void simulate_action(GameState* state, uint8_t new_color) {
     // printf("Choosing %i\n", new_color); 
     uint64_t* player_bitboard = &state->players[state->current_player];
@@ -133,27 +139,79 @@ void print_binary(const void* obj, size_t size) {
     printf("\n");
 }
 
-int8_t minimax(const GameState* state, int depth, bool maximising) {
+int increasing(const void *a, const void *b) {
+    uint8_t int_a = *(const uint8_t*) a;
+    uint8_t int_b = *(const uint8_t*) b;
+    return int_a - int_b;
+}
+
+typedef struct {
+    uint8_t color;
+    uint8_t tiles_increase;
+    GameState result;
+} Action;
+
+void print_action(const Action* action) {
+    printf("Action(Color=%u. Increase=%u)\n", action->color, action->tiles_increase);
+}
+
+int compare_actions(const void* a, const void* b) {
+    Action* action1 = (Action*) a;
+    Action* action2 = (Action*) b;
+    return action2->tiles_increase - action1->tiles_increase;
+}
+
+void get_actions(const GameState* state, Action* actions) {
+    int tiles_before = tiles_occupied(state);
+    for(uint8_t color = 0, i = 0; color < COLORS; color++) {
+        if(!IS_ACTION_ALLOWED(*state, color)) continue;
+        actions[i].color = color;
+
+        actions[i].result = *state;
+        simulate_action(&actions[i].result, color);
+        
+        actions[i].tiles_increase = tiles_occupied(&actions[i].result) - tiles_before;
+        i++;
+    }
+    qsort(actions, ACTIONS, sizeof(Action), compare_actions);
+}
+
+double states_explored = 0;
+static int max_tiles_occupied = 0;
+int8_t minimax(const GameState* state, int depth, bool maximising, int8_t alpha, int8_t beta) {
+    states_explored++;
     // Areas for improvement: gamestates pool with preallocated memory
     // Multi-Threading
     // Alpha-beta prunning
     // Do most functions inline
-    if(depth == 0) {
-        // printf("%i ", score_state(state));
+    uint8_t occupied = tiles_occupied(state);
+    if(depth == 0 || occupied == 56) {
+        if(occupied > max_tiles_occupied) {
+            max_tiles_occupied = occupied;
+        }
         return score_state(state);
     }
 
     int8_t best_score = maximising ? INT8_MIN : INT8_MAX;
-    uint8_t best_action;
-    for(uint8_t action = 0; action < COLORS; action++) {
-        if(!IS_ACTION_ALLOWED(*state, action)) continue;
-        GameState next_state = *state;
-        simulate_action(&next_state, action);
-        int8_t score = minimax(&next_state, depth - 1, !maximising);
-        if(maximising ? score > best_score : score < best_score) {
-            best_score = score;
-            best_action = action;
+    Action actions[ACTIONS];
+    get_actions(state, actions);
+    for(uint8_t action = 0; action < ACTIONS; action++) {
+        if(actions[action].tiles_increase == 0 && action != 0) break;  // Mathematically irrelevant
+    
+        int8_t score = minimax(&actions[action].result, depth - 1, !maximising, alpha, beta);
+
+        if(maximising) {
+            if(score > best_score) {
+                best_score = score;
+            }
+            if(score > alpha) alpha = score;
+        } else {
+            if(score < best_score) {
+                best_score = score;
+            }
+            if(score < beta) beta = score;
         }
+        if (beta <= alpha) break;
     }
     return best_score;
 }
@@ -169,21 +227,12 @@ int main() {
         {5, 4, 2, 4, 3, 4, 0, 5},
     };
     GameState state = create_game(colors);
-
-    // print_game(&state);
-    // simulate_action(&state, 4);
-    // print_game(&state);
-    // simulate_action(&state, 2);
-    // print_game(&state);
-    // printf("Score: %i\n", score_state(&state));
     clock_t start = clock();
-    printf("%i\n", minimax(&state, 10, true));
-    clock_t end = clock();
-    double elapsed = (double) (end - start) / CLOCKS_PER_SEC;
-    printf("Finished in %f sec\n", elapsed);
-
-    // print_game(&state);
-    // simulate_action(&state, 4);
-    // print_game(&state);
+    int8_t max_score = minimax(&state, 56, true, INT8_MIN, INT8_MAX);
+    double elapsed = (double) (clock() - start) / CLOCKS_PER_SEC;
+    printf("Max score: %i\n", max_score);
+    printf("Finished in %.3f sec\n", elapsed);
+    printf("Max tiles occupied: %i\n", max_tiles_occupied);
+    printf("States explored: %.2lfm\n", states_explored / 1e6);
     return 0;
 }
