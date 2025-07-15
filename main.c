@@ -176,9 +176,15 @@ void get_actions(const GameState* state, Action* actions) {
     qsort(actions, ACTIONS, sizeof(Action), compare_actions);
 }
 
+typedef struct {
+    int8_t score;
+    uint8_t actions_trace[ROWS * COLS];
+    uint8_t n_actions;
+} MinimaxNode;
+
 double states_explored = 0;
 static int max_tiles_occupied = 0;
-int8_t minimax(const GameState* state, int depth, bool maximising, int8_t alpha, int8_t beta) {
+MinimaxNode minimax(const GameState* state, int depth, bool maximising, int8_t alpha, int8_t beta) {
     states_explored++;
     // Areas for improvement: gamestates pool with preallocated memory
     // Multi-Threading
@@ -187,31 +193,33 @@ int8_t minimax(const GameState* state, int depth, bool maximising, int8_t alpha,
         if(occupied > max_tiles_occupied) {
             max_tiles_occupied = occupied;
         }
-        return score_state(state);
+        MinimaxNode terminal = {score_state(state)};
+        return terminal;
     }
+    MinimaxNode best_child = {.score=maximising ? INT8_MIN : INT8_MAX};
 
-    int8_t best_score = maximising ? INT8_MIN : INT8_MAX;
     Action actions[ACTIONS];
     get_actions(state, actions);
     for(uint8_t action = 0; action < ACTIONS; action++) {
         if(actions[action].tiles_increase == 0 && action != 0) break;  // Mathematically irrelevant
     
-        int8_t score = minimax(&actions[action].result, depth - 1, !maximising, alpha, beta);
+        MinimaxNode child = minimax(&actions[action].result, depth - 1, !maximising, alpha, beta);
+        child.actions_trace[child.n_actions++] = actions[action].color;
 
         if(maximising) {
-            if(score > best_score) {
-                best_score = score;
+            if(child.score > best_child.score) {
+                best_child = child;
             }
-            if(score > alpha) alpha = score;
+            if(child.score > alpha) alpha = child.score;
         } else {
-            if(score < best_score) {
-                best_score = score;
+            if(child.score < best_child.score) {
+                best_child = child;
             }
-            if(score < beta) beta = score;
+            if(child.score < beta) beta = child.score;
         }
         if (beta <= alpha) break;
     }
-    return best_score;
+    return best_child;
 }
 
 int main() {
@@ -226,11 +234,16 @@ int main() {
     };
     GameState state = create_game(colors);
     clock_t start = clock();
-    int8_t max_score = minimax(&state, 56, true, INT8_MIN, INT8_MAX);
+    MinimaxNode terminal = minimax(&state, 56, true, INT8_MIN, INT8_MAX);
     double elapsed = (double) (clock() - start) / CLOCKS_PER_SEC;
-    printf("Max score: %i\n", max_score);
+    printf("Max score: %i\n", terminal.score);
     printf("Finished in %.3f sec\n", elapsed);
     printf("Max tiles occupied: %i\n", max_tiles_occupied);
     printf("States explored: %.2lfm\n", states_explored / 1e6);
+    printf("Actions: %i\n", terminal.n_actions);
+    for(int i = 0; i < terminal.n_actions; i++) {
+        printf("%i ", terminal.actions_trace[i]);
+    }
+    printf("\n");
     return 0;
 }
