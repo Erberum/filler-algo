@@ -1,9 +1,13 @@
+
+// Crashes if the same color at the start which is
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
 #include <time.h>
+#include <pthread.h>
 
 #define ROWS 7
 #define COLS 8
@@ -40,9 +44,9 @@
 
 
 typedef struct {
+    uint64_t colors[COLORS];
 	uint64_t players[2];
     uint8_t player_colors[2];  // Avoids iterating through color bitboards to check
-    uint64_t colors[COLORS];
     bool current_player;  // 0 or 1
 } GameState;  // BitBoard for the board
 
@@ -92,6 +96,8 @@ void simulate_action(GameState* state, uint8_t new_color) {
     // // Comment for performance boost
     // assert(new_color != old_color);  // Players can't choose the old color
     // assert(state->player_colors[!state->current_player] != new_color);  // Players can't have the same color
+
+
     assert(IS_ACTION_ALLOWED(*state, new_color));
 
     // Update player area with newly acquired tiles
@@ -146,14 +152,14 @@ int increasing(const void *a, const void *b) {
 }
 
 typedef struct {
+    GameState result;
     uint8_t color;
     uint8_t tiles_increase;
-    GameState result;
 } Action;
 
 void print_action(const Action* action) {
     printf("Action(Color=%u. Increase=%u)\n", action->color, action->tiles_increase);
-}
+} 
 
 int compare_actions(const void* a, const void* b) {
     Action* action1 = (Action*) a;
@@ -177,73 +183,81 @@ void get_actions(const GameState* state, Action* actions) {
 }
 
 typedef struct {
+    uint32_t n_reachable;
     int8_t score;
     uint8_t actions_trace[ROWS * COLS];
     uint8_t n_actions;
 } MinimaxNode;
 
-double states_explored = 0;
-static int max_tiles_occupied = 0;
-MinimaxNode minimax(const GameState* state, int depth, bool maximising, int8_t alpha, int8_t beta) {
-    states_explored++;
+
+void minimax(const GameState* state, int depth, int max_depth, int8_t alpha, int8_t beta, MinimaxNode* result) {
+    bool maximising = !state->current_player;  // 0 for maximising, 1 for minimising
+
     // Areas for improvement: gamestates pool with preallocated memory
     // Multi-Threading
     uint8_t occupied = tiles_occupied(state);
-    if(depth == 0 || occupied == 56) {
-        if(occupied > max_tiles_occupied) {
-            max_tiles_occupied = occupied;
-        }
-        MinimaxNode terminal = {score_state(state)};
-        return terminal;
+    if(depth == max_depth || occupied == ROWS * COLS) {
+        result->score = score_state(state);
+        return;
     }
-    MinimaxNode best_child = {.score=maximising ? INT8_MIN : INT8_MAX};
+    result->score = maximising ? INT8_MIN : INT8_MAX;
 
     Action actions[ACTIONS];
     get_actions(state, actions);
+    uint32_t n_reachable = 0;
     for(uint8_t action = 0; action < ACTIONS; action++) {
         if(actions[action].tiles_increase == 0 && action != 0) break;  // Mathematically irrelevant
     
-        MinimaxNode child = minimax(&actions[action].result, depth - 1, !maximising, alpha, beta);
+        MinimaxNode child = {0};
+        minimax(&actions[action].result, depth + 1, max_depth, alpha, beta, &child);
         child.actions_trace[child.n_actions++] = actions[action].color;
+        n_reachable += child.n_reachable + 1;
 
-        if(maximising) {
-            if(child.score > best_child.score) {
-                best_child = child;
-            }
-            if(child.score > alpha) alpha = child.score;
-        } else {
-            if(child.score < best_child.score) {
-                best_child = child;
-            }
-            if(child.score < beta) beta = child.score;
+        if(maximising && child.score > alpha) alpha = child.score;
+        if(!maximising && child.score < beta) beta = child.score;
+
+        if(maximising ? child.score > result->score : child.score < result->score) {
+            *result = child;
         }
         if (beta <= alpha) break;
     }
-    return best_child;
+    result->n_reachable = n_reachable;
 }
 
 int main() {
     uint8_t colors[ROWS][COLS] = {
-        {2, 3, 1, 4, 0, 5, 4, 1},
-        {4, 5, 4, 0, 5, 1, 2, 0},
-        {0, 2, 3, 2, 0, 2, 3, 1},
-        {1, 3, 2, 0, 5, 3, 2, 3},
-        {3, 5, 4, 1, 4, 2, 3, 5},
-        {1, 2, 1, 5, 0, 3, 4, 3},
-        {5, 4, 2, 4, 3, 4, 0, 5},
-    };
+	{2, 4, 1, 0, 2, 0, 2, 4},
+	{4, 2, 5, 3, 4, 2, 5, 1},
+	{3, 1, 2, 1, 2, 3, 4, 3},
+	{4, 5, 3, 5, 0, 5, 0, 2},
+	{5, 0, 2, 3, 1, 3, 2, 3},
+	{1, 3, 1, 0, 3, 2, 5, 1},
+	{3, 2, 0, 2, 4, 1, 0, 5},
+};
     GameState state = create_game(colors);
+    state.current_player = 1;
+
+    uint8_t actions[] = {};
+    printf("Action history: ");
+    for(int i = 0; i < sizeof(actions) / sizeof(uint8_t); i++) {
+        printf("%i ", actions[i]);
+        simulate_action(&state, actions[i]);
+    }
+    printf("\n");
+    print_game(&state);
+
     clock_t start = clock();
-    MinimaxNode terminal = minimax(&state, 56, true, INT8_MIN, INT8_MAX);
+    MinimaxNode terminal;
+    minimax(&state, 0, 56, INT8_MIN, INT8_MAX, &terminal);
     double elapsed = (double) (clock() - start) / CLOCKS_PER_SEC;
-    printf("Max score: %i\n", terminal.score);
-    printf("Finished in %.3f sec\n", elapsed);
-    printf("Max tiles occupied: %i\n", max_tiles_occupied);
-    printf("States explored: %.2lfm\n", states_explored / 1e6);
-    printf("Actions: %i\n", terminal.n_actions);
+    printf("-=-=-=-=-=-\n");
+    printf("%.2lfm states, %.3f sec\n", terminal.n_reachable / 1e6, elapsed);
+    // printf("Max tiles occupied: %i\n", max_tiles_occupied);
+    printf("Game Ended (moves=%i, score=%i) <- ", terminal.n_actions, terminal.score);
     for(int i = 0; i < terminal.n_actions; i++) {
         printf("%i ", terminal.actions_trace[i]);
     }
     printf("\n");
+    
     return 0;
 }
