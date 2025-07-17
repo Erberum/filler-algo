@@ -185,7 +185,7 @@ typedef struct {
 } MinimaxNode;
 
 void minimax(const GameState *state, int depth, int max_depth, int8_t alpha, int8_t beta, MinimaxNode *result) {
-    bool maximising = !state->current_player; // 0 for maximising, 1 for minimising
+    bool maximising = !state->current_player; // Player 0 for maximising, 1 for minimising
 
     // Areas for improvement: gamestates pool with preallocated memory
     // Multi-Threading
