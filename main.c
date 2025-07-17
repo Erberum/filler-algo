@@ -2,7 +2,6 @@
 // Crashes if the same color at the start which is
 
 #include <assert.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -12,8 +11,6 @@
 #define ROWS 7
 #define COLS 8
 #define COLORS 6
-// Colors of both players cannot be chosen
-#define ACTIONS (COLORS - 2)
 
 #define BIT_POSITION(row, col) (row * COLS + col)
 #define POS_MASK(row, col) ((uint64_t)1 << BIT_POSITION(row, col))
@@ -85,13 +82,8 @@ uint8_t tiles_occupied(const GameState *state) {
 }
 
 void simulate_action(GameState *state, uint8_t new_color) {
-    // printf("Choosing %i\n", new_color);
     uint64_t *player_bitboard = &state->players[state->current_player];
     uint8_t old_color = state->player_colors[state->current_player];
-
-    // // Comment for performance boost
-    // assert(new_color != old_color);  // Players can't choose the old color
-    // assert(state->player_colors[!state->current_player] != new_color);  // Players can't have the same color
 
     assert(IS_ACTION_ALLOWED(*state, new_color));
 
@@ -162,19 +154,20 @@ int compare_actions(const void *a, const void *b) {
     return action2->tiles_increase - action1->tiles_increase;
 }
 
-void get_actions(const GameState *state, Action *actions) {
+void get_actions(const GameState *state, Action *actions, uint8_t *n_actions) {
     int tiles_before = tiles_occupied(state);
-    for (uint8_t color = 0, i = 0; color < COLORS; color++) {
+    *n_actions = 0;
+    for (uint8_t color = 0; color < COLORS; color++) {
         if (!IS_ACTION_ALLOWED(*state, color)) continue;
-        actions[i].color = color;
-
-        actions[i].result = *state;
-        simulate_action(&actions[i].result, color);
-
-        actions[i].tiles_increase = tiles_occupied(&actions[i].result) - tiles_before;
-        i++;
+        Action *action = actions + *n_actions;
+        action->color = color;
+        action->result = *state;
+        simulate_action(&action->result, color);
+        action->tiles_increase = tiles_occupied(&action->result) - tiles_before;
+        if (action->tiles_increase == 0) continue; // Mathematically irrelevant
+        (*n_actions)++;
     }
-    qsort(actions, ACTIONS, sizeof(Action), compare_actions);
+    qsort(actions, *n_actions, sizeof(Action), compare_actions);
 }
 
 typedef struct {
@@ -184,39 +177,42 @@ typedef struct {
     uint8_t n_actions;
 } MinimaxNode;
 
-void minimax(const GameState *state, int depth, int max_depth, int8_t alpha, int8_t beta, MinimaxNode *result) {
+MinimaxNode minimax(const GameState *state, int depth, int max_depth, int8_t alpha, int8_t beta) {
     bool maximising = !state->current_player; // Player 0 for maximising, 1 for minimising
-
     // Areas for improvement: gamestates pool with preallocated memory
-    // Multi-Threading
+
     uint8_t occupied = tiles_occupied(state);
     if (depth == max_depth || occupied == ROWS * COLS) {
-        result->score = score_state(state);
-        return;
+        return (MinimaxNode){.score = score_state(state)};
     }
-    result->score = maximising ? INT8_MIN : INT8_MAX;
 
-    Action actions[ACTIONS];
-    get_actions(state, actions);
+    MinimaxNode children[COLORS];
+
+    Action actions[COLORS];
+    uint8_t n_valid_actions;
+    get_actions(state, actions, &n_valid_actions);
+
     uint32_t n_reachable = 0;
-    for (uint8_t action = 0; action < ACTIONS; action++) {
-        if (actions[action].tiles_increase == 0 && action != 0)
-            break; // Mathematically irrelevant
+    MinimaxNode *best_child = &children[0];
+    for (int i = 0; i < n_valid_actions; i++) {
+        MinimaxNode *child = &children[i];
+        Action *action = &actions[i];
 
-        MinimaxNode child = {0};
-        minimax(&actions[action].result, depth + 1, max_depth, alpha, beta, &child);
-        child.actions_trace[child.n_actions++] = actions[action].color;
-        n_reachable += child.n_reachable + 1;
+        *child = minimax(&action->result, depth + 1, max_depth, alpha, beta);
 
-        if (maximising && child.score > alpha) alpha = child.score;
-        if (!maximising && child.score < beta) beta = child.score;
+        child->actions_trace[child->n_actions++] = action->color;
+        n_reachable += child->n_reachable + 1;
 
-        if (maximising ? child.score > result->score : child.score < result->score) {
-            *result = child;
+        if (maximising && child->score > alpha) alpha = child->score;
+        if (!maximising && child->score < beta) beta = child->score;
+
+        if (maximising ? child->score > best_child->score : child->score < best_child->score) {
+            best_child = child;
         }
         if (beta <= alpha) break;
     }
-    result->n_reachable = n_reachable;
+    best_child->n_reachable = n_reachable;
+    return *best_child;
 }
 
 int main() {
@@ -242,8 +238,7 @@ int main() {
     print_game(&state);
 
     clock_t start = clock();
-    MinimaxNode terminal;
-    minimax(&state, 0, 56, INT8_MIN, INT8_MAX, &terminal);
+    MinimaxNode terminal = minimax(&state, 0, 56, INT8_MIN, INT8_MAX);
     double elapsed = (double)(clock() - start) / CLOCKS_PER_SEC;
     printf("-=-=-=-=-=-\n");
     printf("%.2lfm states, %.3f sec\n", terminal.n_reachable / 1e6, elapsed);
