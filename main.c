@@ -1,6 +1,3 @@
-
-// Crashes if the same color at the start which is
-
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -42,7 +39,7 @@ typedef struct {
     uint64_t colors[COLORS];
     uint64_t players[2];
     uint8_t player_colors[2]; // Avoids iterating through color bitboards to check
-    bool current_player;      // 0 or 1
+    bool current_player;      // Player 0 or 1
 } GameState;                  // BitBoard for the board
 
 void print_bitboard(uint64_t bitboard) {
@@ -56,12 +53,13 @@ void print_bitboard(uint64_t bitboard) {
     }
 }
 
-GameState create_game(const uint8_t colors[ROWS][COLS]) {
+GameState create_game(const uint8_t colors[ROWS][COLS], bool second_player_starts) {
     GameState gamestate = {0};
     gamestate.players[0] = PLAYER1_START;
     gamestate.players[1] = PLAYER2_START;
     gamestate.player_colors[0] = colors[ROWS - 1][0];
     gamestate.player_colors[1] = colors[0][COLS - 1];
+    gamestate.current_player = second_player_starts; // Player 0 for first, player 1 for second
 
     for (int row = 0; row < ROWS; row++) {
         for (int col = 0; col < COLS; col++) {
@@ -223,10 +221,9 @@ int main() {
         {4, 5, 3, 5, 0, 5, 0, 2},
         {5, 0, 2, 3, 1, 3, 2, 3},
         {1, 3, 1, 0, 3, 2, 5, 1},
-        {3, 2, 0, 2, 4, 1, 0, 5},
+        {4, 2, 0, 2, 4, 1, 0, 5},
     };
-    GameState state = create_game(colors);
-    state.current_player = 1;
+    GameState state = create_game(colors, true);
 
     uint8_t actions[] = {};
     printf("Action history: ");
