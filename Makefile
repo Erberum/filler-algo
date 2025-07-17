@@ -1,6 +1,6 @@
 all: build run
 build:
-	gcc main.c -o main.out -Ofast
+	gcc main.c -o main.out -O2
 run:
 	./main.out
 debug:
