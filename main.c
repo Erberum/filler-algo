@@ -165,8 +165,7 @@ int compare_actions(const void *a, const void *b) {
 void get_actions(const GameState *state, Action *actions) {
     int tiles_before = tiles_occupied(state);
     for (uint8_t color = 0, i = 0; color < COLORS; color++) {
-        if (!IS_ACTION_ALLOWED(*state, color))
-            continue;
+        if (!IS_ACTION_ALLOWED(*state, color)) continue;
         actions[i].color = color;
 
         actions[i].result = *state;
@@ -209,16 +208,13 @@ void minimax(const GameState *state, int depth, int max_depth, int8_t alpha, int
         child.actions_trace[child.n_actions++] = actions[action].color;
         n_reachable += child.n_reachable + 1;
 
-        if (maximising && child.score > alpha)
-            alpha = child.score;
-        if (!maximising && child.score < beta)
-            beta = child.score;
+        if (maximising && child.score > alpha) alpha = child.score;
+        if (!maximising && child.score < beta) beta = child.score;
 
         if (maximising ? child.score > result->score : child.score < result->score) {
             *result = child;
         }
-        if (beta <= alpha)
-            break;
+        if (beta <= alpha) break;
     }
     result->n_reachable = n_reachable;
 }
