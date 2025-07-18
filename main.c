@@ -170,12 +170,12 @@ void get_actions(const GameState *state, Action *actions, uint8_t *n_actions) {
 
 typedef struct {
     uint32_t n_reachable;
-    int8_t score;
     uint8_t actions_trace[ROWS * COLS];
     uint8_t n_actions;
+    int8_t score;
 } MinimaxNode;
 
-MinimaxNode minimax(const GameState *state, int depth, int max_depth, int8_t alpha, int8_t beta) {
+MinimaxNode minimax_inner(const GameState *state, uint8_t depth, uint8_t max_depth, int8_t alpha, int8_t beta) {
     bool maximising = !state->current_player; // Player 0 for maximising, 1 for minimising
     // Areas for improvement: gamestates pool with preallocated memory
 
@@ -196,7 +196,7 @@ MinimaxNode minimax(const GameState *state, int depth, int max_depth, int8_t alp
         MinimaxNode *child = &children[i];
         Action *action = &actions[i];
 
-        *child = minimax(&action->result, depth + 1, max_depth, alpha, beta);
+        *child = minimax_inner(&action->result, depth + 1, max_depth, alpha, beta);
 
         child->actions_trace[child->n_actions++] = action->color;
         n_reachable += child->n_reachable + 1;
@@ -211,6 +211,10 @@ MinimaxNode minimax(const GameState *state, int depth, int max_depth, int8_t alp
     }
     best_child->n_reachable = n_reachable;
     return *best_child;
+}
+
+MinimaxNode minimax(const GameState *state, uint8_t depth) {
+    return minimax_inner(state, 0, depth, INT8_MIN, INT8_MAX);
 }
 
 int main() {
@@ -235,7 +239,7 @@ int main() {
     print_game(&state);
 
     clock_t start = clock();
-    MinimaxNode terminal = minimax(&state, 0, 56, INT8_MIN, INT8_MAX);
+    MinimaxNode terminal = minimax(&state, 56);
     double elapsed = (double)(clock() - start) / CLOCKS_PER_SEC;
     printf("-=-=-=-=-=-\n");
     printf("%.2lfm states, %.3f sec\n", terminal.n_reachable / 1e6, elapsed);
