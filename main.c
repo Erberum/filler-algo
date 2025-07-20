@@ -232,7 +232,7 @@ int main() {
     };
     GameState state = create_game(colors, true);
 
-    uint8_t actions[] = {1, 2};
+    uint8_t actions[] = {};
     uint8_t n_actions = sizeof(actions) / sizeof(uint8_t);
     simulate_actions_sequence(&state, actions, n_actions);
     printf("Action history: ");
