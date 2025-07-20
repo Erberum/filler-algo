@@ -31,10 +31,6 @@
 
 #define IS_ACTION_ALLOWED(state, color) ((state).player_colors[(state).current_player] != color && (state).player_colors[!(state).current_player] != color)
 
-// #define FILL_MASK(player_bitboard, color_bitboard) EXPAND_MASK(player_bitboard) & color_bitboard
-
-// #define EXPAND(player_bitboard, new_color) (EXPAND_MASK(player_bitboard) & P)
-
 typedef struct {
     uint64_t colors[COLORS];
     uint64_t players[2];
@@ -97,6 +93,12 @@ void simulate_action(GameState *state, uint8_t new_color) {
     state->current_player = !state->current_player;
 }
 
+void simulate_actions_sequence(GameState *state, uint8_t actions[], uint8_t n_actions) {
+    for (int i = 0; i < n_actions; i++) {
+        simulate_action(state, actions[i]);
+    }
+}
+
 // void assert_gamestate_valid(const GameState* game) {
 
 // }
@@ -111,6 +113,7 @@ uint8_t get_color_at(const GameState *state, int row, int col) {
 }
 
 void print_game(const GameState *state) {
+    printf("-=-=-=-=-=-\n");
     printf("Turn: Player %i\n", (int)state->current_player + 1);
     for (int row = 0; row < ROWS; row++) {
         for (int col = 0; col < COLS; col++) {
@@ -229,11 +232,12 @@ int main() {
     };
     GameState state = create_game(colors, true);
 
-    uint8_t actions[] = {};
+    uint8_t actions[] = {1, 2};
+    uint8_t n_actions = sizeof(actions) / sizeof(uint8_t);
+    simulate_actions_sequence(&state, actions, n_actions);
     printf("Action history: ");
-    for (int i = 0; i < sizeof(actions) / sizeof(uint8_t); i++) {
+    for (int i = 0; i < n_actions; i++) {
         printf("%i ", actions[i]);
-        simulate_action(&state, actions[i]);
     }
     printf("\n");
     print_game(&state);
