@@ -262,3 +262,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+#Cython
+c_src/minimax_wrapper.c
