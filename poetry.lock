@@ -95,5 +95,5 @@ type = ["importlib_metadata (>=7.0.2) ; python_version < \"3.10\"", "jaraco.deve
 
 [metadata]
 lock-version = "2.1"
-python-versions = "3.13.5"
-content-hash = "5e12ca7de048935fa29c87bd95501722afdd697eb8ecab9d158f6a5366341fb7"
+python-versions = "==3.13.5"
+content-hash = "98a016bb531ab04ae83f140d2fbd101d9a4fc407407cdf7306d3b500b011774e"

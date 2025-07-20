@@ -1,21 +1,25 @@
 # filler-algo
+
 Algorithmic solver for the filler-game (>3e+32 potential game states)
 
-Install poetry
+Install dependencies through poetry
+
 ```bash
 poetry install
 ```
 
-Get path to environment
+Activate the environment
+
 ```bash
-poetry env activate
+source $(poetry env info -p)/bin/activate
 ```
 
-Use path from above to activate the environment
-```bash
-source *path*
-```
-
+Build
 ```bash
 python setup.py build_ext -i
+```
+
+Run
+```bash
+python main.py
 ```

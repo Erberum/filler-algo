@@ -265,3 +265,6 @@ __marimo__/
 
 #Cython
 c_src/minimax_wrapper.c
+
+# JetBrains
+.idea
