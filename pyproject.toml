@@ -3,9 +3,9 @@ name = "filler-algo"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Elisei Kambalin",email = "erberum@gmail.com"}
+    { name = "Elisei Kambalin", email = "erberum@gmail.com" }
 ]
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = "==3.13.5"
 dependencies = [
@@ -13,9 +13,12 @@ dependencies = [
     "setuptools (>=80.9.0,<81.0.0)"
 ]
 
+[build-system]
+requires = ["Cython", "poetry-core", "setuptools"]
+build-backend = "setuptools.build_meta"
+
 [tool.poetry]
 package-mode = false
 
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+[project.scripts]
+filler-solve = "filler_algo.python_src.main:main"

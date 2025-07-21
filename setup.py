@@ -1,10 +1,10 @@
-from setuptools import setup, Extension
+from setuptools import setup
 from Cython.Build import cythonize
+from setuptools import Extension
 
 setup(
     ext_modules=cythonize([
-        Extension('minimax',
-                  ['c_src/minimax_wrapper.pyx', 'c_src/minimax.c'],
-                  extra_compile_args=['-Wall', '-O3'])
-    ]),
+        Extension('filler_algo.c_src.minimax',
+                  ['src/filler_algo/c_src/minimax.c', 'src/filler_algo/c_src/minimax_wrapper.pyx'])
+    ])
 )

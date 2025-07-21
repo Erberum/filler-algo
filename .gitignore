@@ -264,7 +264,7 @@ __marimo__/
 .streamlit/secrets.toml
 
 #Cython
-c_src/minimax_wrapper.c
+src/filler_algo/c_src/minimax_wrapper.c
 
 # JetBrains
 .idea
