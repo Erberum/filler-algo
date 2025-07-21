@@ -24,7 +24,8 @@ cdef extern from "minimax.h":
 
 
 
-def filler_solve(board: list[list[int]], bint second_player_starts, previous_actions: list[int], uint8_t depth = 56) -> Tuple[List[int], int]:
+def filler_solve(board: list[list[int]], bint second_player_starts, previous_actions: list[int], uint8_t depth = 56) -> \
+        tuple[list[int], int]:
     """
     :return: List of optimal actions and resulting score
     """

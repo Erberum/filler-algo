@@ -1,20 +1,23 @@
-from filler_algo.c_src import minimax
+import os
+
+from filler_algo.c_src.minimax import filler_solve
+
+from filler_algo.python_src.game import Color
+from filler_algo.python_src.vision import extract_game_board
+import sys
 
 
 def main():
-    print(123)
+    if len(sys.argv) != 2:
+        print('Usage: filler-solve <path>')
 
-#
-# def main():
-#     field = [
-#         [2, 4, 1, 0, 2, 0, 2, 4],
-#         [4, 2, 5, 3, 4, 2, 5, 1],
-#         [3, 1, 2, 1, 2, 3, 4, 3],
-#         [4, 5, 3, 5, 0, 5, 0, 2],
-#         [5, 0, 2, 3, 1, 3, 2, 3],
-#         [1, 3, 1, 0, 3, 2, 5, 1],
-#         [4, 2, 0, 2, 4, 1, 0, 5],fu
-#     ]
-#
-#     optimal_actions, score = filler_solve(field, True, [])
-#     print(optimal_actions, score)
+    path = sys.argv[1]
+    if not os.path.exists(path):
+        raise FileNotFoundError(path)
+
+    enum_board = extract_game_board(path)
+    board = [[color.value for color in row] for row in enum_board]
+
+    solution, score = filler_solve(board, False, [])
+    enum_solution = [Color(c) for c in solution]
+    print(', '.join(c.name for c in enum_solution))
