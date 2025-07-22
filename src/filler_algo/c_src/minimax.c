@@ -12,7 +12,7 @@ void print_bitboard(uint64_t bitboard) {
     uint8_t *byte = (uint8_t *)&bitboard;
     for (int row = 0; row < 8; row++) {
         for (int col = 0; col < 8; col++) {
-            printf("%c", ((1 << col) & byte[row]) ? '1' : '0');
+            printf("%c", (((unsigned)1 << col) & byte[row]) ? '1' : '0');
         }
         printf("\n");
     }
@@ -93,7 +93,7 @@ void print_binary(const void *obj, size_t size) {
     const uint8_t *bytes = (const uint8_t *)obj;
     for (int byte = size - 1; byte >= 0; byte--) {
         for (int bit = 7; bit >= 0; bit--) {
-            printf("%c", ((1 << bit) & bytes[byte]) ? '1' : '0');
+            printf("%c", (((unsigned)1 << bit) & bytes[byte]) ? '1' : '0');
         }
     }
     printf("\n");
@@ -118,7 +118,6 @@ void get_actions(const GameState *state, Action *actions, uint8_t *n_actions) {
         action->result = *state;
         simulate_action(&action->result, color);
         action->tiles_increase = tiles_occupied(&action->result) - tiles_before;
-        if (action->tiles_increase == 0) continue; // Mathematically irrelevant
         (*n_actions)++;
     }
     qsort(actions, *n_actions, sizeof(Action), compare_actions);
@@ -130,6 +129,7 @@ MinimaxNode minimax_inner(const GameState *state, uint8_t depth, uint8_t max_dep
 
     uint8_t occupied = tiles_occupied(state);
     if (depth == max_depth || occupied == ROWS * COLS) {
+        // printf("%i ", score_state(state));
         return (MinimaxNode){.score = score_state(state)};
     }
 
@@ -138,12 +138,18 @@ MinimaxNode minimax_inner(const GameState *state, uint8_t depth, uint8_t max_dep
     Action actions[COLORS];
     uint8_t n_valid_actions;
     get_actions(state, actions, &n_valid_actions);
-
+    
+    assert(n_valid_actions != 0);
+    
     uint32_t n_reachable = 0;
     MinimaxNode *best_child = &children[0];
     for (int i = 0; i < n_valid_actions; i++) {
         MinimaxNode *child = &children[i];
         Action *action = &actions[i];
+        if (action->tiles_increase == 0 && i != 0) {
+            n_valid_actions = i + 1;  // 0 actions are irrelevant, if not the only option
+            break;
+        }
 
         *child = minimax_inner(&action->result, depth + 1, max_depth, alpha, beta);
 
@@ -163,7 +169,10 @@ MinimaxNode minimax_inner(const GameState *state, uint8_t depth, uint8_t max_dep
 }
 
 MinimaxNode minimax(const GameState *state, uint8_t depth) {
-    return minimax_inner(state, 0, depth, INT8_MIN, INT8_MAX);
+    // print_binary(state, sizeof(*state));
+    MinimaxNode node = minimax_inner(state, 0, depth, INT8_MIN, INT8_MAX);
+    printf("Blah Blah %i\n", node.score);
+    return node;
 }
 
 //int main() {
