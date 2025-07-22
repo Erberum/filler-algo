@@ -50,7 +50,7 @@ void simulate_action(GameState *state, uint8_t new_color) {
 
     // assert(!IS_ACTION_ALLOWED(*state, new_color));
     if(!IS_ACTION_ALLOWED(*state, new_color)) {
-        printf("Action not allowed!\n");
+        fprintf(stderr, "Action not allowed!\n");
         exit(-1);
     }
 
@@ -133,7 +133,6 @@ MinimaxNode minimax_inner(const GameState *state, uint8_t depth, uint8_t max_dep
 
     uint8_t occupied = tiles_occupied(state);
     if (depth == max_depth || occupied == ROWS * COLS) {
-        // printf("%i ", score_state(state));
         return (MinimaxNode){.score = score_state(state)};
     }
 
@@ -173,10 +172,7 @@ MinimaxNode minimax_inner(const GameState *state, uint8_t depth, uint8_t max_dep
 }
 
 MinimaxNode minimax(const GameState *state, uint8_t depth) {
-    // print_binary(state, sizeof(*state));
-    MinimaxNode node = minimax_inner(state, 0, depth, INT8_MIN, INT8_MAX);
-    printf("Blah Blah %i\n", node.score);
-    return node;
+    return minimax_inner(state, 0, depth, INT8_MIN, INT8_MAX);
 }
 
 //int main() {
