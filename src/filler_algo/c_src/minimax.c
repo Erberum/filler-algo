@@ -48,7 +48,11 @@ void simulate_action(GameState *state, uint8_t new_color) {
     uint64_t *player_bitboard = &state->players[state->current_player];
     uint8_t old_color = state->player_colors[state->current_player];
 
-    assert(IS_ACTION_ALLOWED(*state, new_color));
+    // assert(!IS_ACTION_ALLOWED(*state, new_color));
+    if(!IS_ACTION_ALLOWED(*state, new_color)) {
+        printf("Action not allowed!\n");
+        exit(-1);
+    }
 
     // Update player area with newly acquired tiles
     *player_bitboard |= (EXPAND_MASK(*player_bitboard) & state->colors[new_color]);

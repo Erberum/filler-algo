@@ -11,3 +11,6 @@ class Color(Enum):
     BLUE = 3
     PURPLE = 4
     GRAY = 5
+
+
+COLORS_STR = [c.name for c in Color]

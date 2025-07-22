@@ -27,8 +27,7 @@ def crop_board(image_path: str):
 
     contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
-    if not contours:
-        raise Exception('No contours found')
+    assert contours, 'No contours found'
     largest = max(contours, key=cv2.contourArea)
 
     # if cv2.contourArea(largest) < 4000:

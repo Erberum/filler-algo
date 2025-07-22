@@ -1,6 +1,8 @@
 import time
 
-from libc.stdint cimport uint8_t, uint32_t, int8_t
+from libc.stdint cimport uint8_t, uint32_t, int8_t, uint64_t
+
+from filler_algo.python_src.game import Color
 
 
 cdef extern from "minimax.h":
@@ -9,7 +11,10 @@ cdef extern from "minimax.h":
     DEF COLORS = 6
 
     ctypedef struct GameState:
-        pass
+        uint64_t colors[COLORS];
+        uint64_t players[2];
+        uint8_t player_colors[2];
+        bint current_player;
 
     ctypedef struct MinimaxNode:
         uint32_t n_reachable;
@@ -24,12 +29,12 @@ cdef extern from "minimax.h":
 
 
 
-def filler_solve(board: list[list[int]], bint second_player_starts, previous_actions: list[int], uint8_t depth = 56) -> \
-        tuple[list[int], int]:
+def filler_solve(board: list[list[Color]], bint second_player_starts, past_actions: list[Color],
+                 uint8_t depth = 56) -> tuple[list[Color], int]:
     """
     :return: List of optimal actions and resulting score
     """
-    assert len(previous_actions) < ROWS * COLS, f'Number of actions should not exceed {ROWS * COLS}'
+    assert len(past_actions) < ROWS * COLS, f'Number of actions should not exceed {ROWS * COLS}'
 
     # Convert python 2D board to C array
     cdef uint8_t c_board[ROWS][COLS]
@@ -37,23 +42,25 @@ def filler_solve(board: list[list[int]], bint second_player_starts, previous_act
     for row in range(ROWS):
         assert len(board[row]) == COLS, f'Board must have {COLS} columns, got {len(board[row])}'
         for col in range(COLS):
-            c_board[row][col] = board[row][col]
+            c_board[row][col] = board[row][col].value
 
     cdef GameState state = create_game(c_board, second_player_starts)
 
     # Convert python actions list to C array
-    for action in previous_actions:
-        assert 0 < action < COLORS, f'Color out of boundaries (0 < got {action} < {COLORS})'
-        simulate_action(&state, <uint8_t> action)
+    for action in past_actions:
+        assert 0 <= action.value < COLORS, f'Color out of boundaries (0 < got {action.value} < {COLORS})'
+        simulate_action(&state, <uint8_t> action.value)
+
+    # print_game(&state)
 
     # Run minimax
     start = time.time()
     cdef MinimaxNode terminal = minimax(&state, depth)
     elapsed = time.time() - start
-    print(f'Minimax({terminal.n_reachable / 1e6:.2f}m states, {elapsed:.2f} sec)')
+    print(f'Minimax({terminal.n_reachable:.2e} states, {elapsed:.2f} sec)')
 
     # Convert C "path to optimal node" array to python list
-    optimal_actions = [terminal.actions_trace[i] for i in range(terminal.n_actions)]
+    optimal_actions = [Color(terminal.actions_trace[i]) for i in range(terminal.n_actions)]
     optimal_actions = optimal_actions[::-1]  # Reverse because C algorithm traces backwards from the terminal node
+
     return optimal_actions, terminal.score
-    # print_game(&state)
