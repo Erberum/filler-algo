@@ -53,6 +53,10 @@ typedef struct {
     int8_t score;
 } MinimaxNode;
 
+static inline bool is_action_allowed_wrapper(const GameState *state, uint8_t action) {
+    return IS_ACTION_ALLOWED(*state, action);
+}
+
 void print_bitboard(uint64_t bitboard);
 GameState create_game(const uint8_t colors[7][8], bool second_player_starts);
 int8_t score_state(const GameState *state);

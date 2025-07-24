@@ -216,3 +216,4 @@ MinimaxNode minimax(const GameState *state, uint8_t depth) {
 void test_print(int kek) {
     printf("%i", kek);
 }
+
