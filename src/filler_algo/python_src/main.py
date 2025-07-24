@@ -9,7 +9,7 @@ from filler_algo.python_src.vision import extract_game_board
 import sys
 
 
-def input_action(text: str):
+def input_action(text: str) -> Color:
     while True:
         inp = input(text)
         if inp.upper() in COLORS_STR:
