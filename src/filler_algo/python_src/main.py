@@ -18,25 +18,19 @@ def input_action(text: str) -> Color:
 
 
 def main():
-    assert len(sys.argv) == 2, 'Usage: filler-solve <path>'
+    assert len(sys.argv) == 2, 'Usage: filler-solve <screenshot-path>'
 
     path = sys.argv[1]
     assert os.path.exists(path), f'File not found: {path}'
-
     board = extract_game_board(path)
     game = PyGameStateWrapper(board, False)
-    # Past actions till solution for example1.png
-    # past_actions = [Color.GRAY, Color.RED, Color.YELLOW, Color.GRAY, Color.BLUE, Color.RED, Color.YELLOW, Color.BLUE,
-    #                 Color.PURPLE, Color.YELLOW, Color.GRAY, Color.GREEN, Color.PURPLE, Color.BLUE, Color.GREEN,
-    #                 Color.RED, Color.GRAY, Color.YELLOW, Color.GREEN, Color.GRAY, Color.BLUE, Color.GREEN, Color.YELLOW,
-    #                 Color.PURPLE, Color.GRAY, Color.RED, Color.GREEN, Color.YELLOW, Color.RED]
-    past_actions = []
 
+    past_actions = []
     for action in past_actions:
         game.simulate(action)
 
     while True:
-        print('---')
+        print('-=-=-=-')
         print(game)
         if game.is_ended:
             break
@@ -46,3 +40,4 @@ def main():
             game.simulate(action)
         except AssertionError as e:
             print(e)
+    print('-=-=-=- Game ended')
