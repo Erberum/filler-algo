@@ -43,7 +43,7 @@ pip install -e .
 ## Running
 
 ```bash
-filler-solve
+filler-solve example1.png
 ```
 
 ## Problem rules
