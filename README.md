@@ -56,8 +56,8 @@ filler-solve example1.png
 
 ## Inspiration
 
-After watching those videos, I was inspired to create an algorithm that finds the perfect solution. As
-far as I know, that hasn't been done before
+After watching those videos, I was inspired to create an algorithm for filler that finds mathematically perfect solution. As
+far as I know, that hasn't been done before:
 
 - [YouTube. Algorithm by JoeCoup: only 8 turns deep Minimax search with very interesting interface and StockFish-like evaluation bar.](https://www.youtube.com/watch?v=7EH1QzzXKM0)
 - [GitHub. Algorithm by ItsAsShrimpleAsThat: 20 turns deep search. Really cool web gui. Iterative deepening. Quiescence search with limit.](https://github.com/ItsAsShrimpleAsThat/FillerSolver)
