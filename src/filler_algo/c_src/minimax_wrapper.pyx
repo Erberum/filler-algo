@@ -34,7 +34,7 @@ cdef extern from "minimax.h":
 
 cdef class PyGameStateWrapper:
     cdef GameState * c_state;
-    
+
     @staticmethod
     cdef GameState __c_create_game_state(board: list[list[Color]], second_player_starts: bint = False):
         # Convert python 2D board to C array
