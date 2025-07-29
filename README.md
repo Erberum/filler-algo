@@ -54,7 +54,10 @@ filler-solve
 - Selecting a color expands their territory to adjacent cells of that color
 - Goal: control the largest area by the end
 
-## Credits
+## Inspiration
 
-- [YouTube. Algorithm by JoeCoup, only 8 layers deep search, Cool interface with StockFish-like evaluation bar.](https://www.youtube.com/watch?v=7EH1QzzXKM0)
-- [GitHub. Algorithm by ItsAsShrimpleAsThat, 20 layers deep, cool web gui, Iterative Deepening, Quiescence Search with limit.](https://github.com/ItsAsShrimpleAsThat/FillerSolver)
+After watching those videos, I was inspired to create an algorithm that finds the perfect solution—something that, as
+far as I know, hasn’t been done before.
+
+- [YouTube. Algorithm by JoeCoup: only 8 turns deep Minimax search with very interesting interface and StockFish-like evaluation bar.](https://www.youtube.com/watch?v=7EH1QzzXKM0)
+- [GitHub. Algorithm by ItsAsShrimpleAsThat: 20 turns deep search. Really cool web gui. Iterative deepening. Quiescence search with limit.](https://github.com/ItsAsShrimpleAsThat/FillerSolver)
