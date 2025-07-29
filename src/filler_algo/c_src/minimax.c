@@ -19,21 +19,39 @@ void print_bitboard(uint64_t bitboard) {
 }
 
 GameState create_game(const uint8_t colors[ROWS][COLS], bool second_player_starts) {
-    GameState gamestate = {0};
-    gamestate.players[0] = PLAYER1_START;
-    gamestate.players[1] = PLAYER2_START;
-    gamestate.player_colors[0] = colors[ROWS - 1][0];
-    gamestate.player_colors[1] = colors[0][COLS - 1];
-    gamestate.current_player = second_player_starts; // Player 0 for first, player 1 for second
+    GameState state = {0};
+    // Players owned fields bitmaps
+    state.players[0] = PLAYER1_START;
+    state.players[1] = PLAYER2_START;
+    // Starting player colors
+    state.player_colors[0] = colors[ROWS - 1][0];
+    state.player_colors[1] = colors[0][COLS - 1];
+    // Starting player, 0 - first, 1 - second
+    state.current_player = second_player_starts;
 
+    // Create color bitmaps
     for (int row = 0; row < ROWS; row++) {
         for (int col = 0; col < COLS; col++) {
             uint8_t color = colors[row][col];
             assert(color >= 0 && color < COLORS);
-            gamestate.colors[color] |= POS_MASK(row, col);
+            state.colors[color] |= POS_MASK(row, col);
         }
     }
-    return gamestate;
+
+    // Expand players' tiles to correspond with initial colors
+    for (int i = 0; i < 2; i++) {
+        uint8_t tiles = tiles_occupied(&state);
+        uint8_t tiles_before = 0;
+
+        uint8_t player_color = state.player_colors[i];
+        uint64_t *player_bitboard = &state.players[i];
+        while (tiles_before != tiles) {
+            tiles_before = tiles;
+            *player_bitboard |= (EXPAND_MASK(*player_bitboard) & state.colors[player_color]);
+            tiles = tiles_occupied(&state);
+        }
+    }
+    return state;
 }
 
 int8_t score_state(const GameState *state) {
@@ -49,7 +67,7 @@ void simulate_action(GameState *state, uint8_t new_color) {
     uint8_t old_color = state->player_colors[state->current_player];
 
     // assert(!IS_ACTION_ALLOWED(*state, new_color));
-    if(!IS_ACTION_ALLOWED(*state, new_color)) {
+    if (!IS_ACTION_ALLOWED(*state, new_color)) {
         fprintf(stderr, "Action not allowed!\n");
         exit(-1);
     }
@@ -64,12 +82,6 @@ void simulate_action(GameState *state, uint8_t new_color) {
     // Next turn
     state->player_colors[state->current_player] = new_color;
     state->current_player = !state->current_player;
-}
-
-void simulate_actions_sequence(GameState *state, uint8_t actions[], uint8_t n_actions) {
-    for (int i = 0; i < n_actions; i++) {
-        simulate_action(state, actions[i]);
-    }
 }
 
 uint8_t get_color_at(const GameState *state, int row, int col) {
@@ -127,7 +139,6 @@ void get_actions(const GameState *state, Action *actions, uint8_t *n_actions) {
     qsort(actions, *n_actions, sizeof(Action), compare_actions);
 }
 
-
 MinimaxNode minimax_inner(const GameState *state, uint8_t depth, uint8_t max_depth, int8_t alpha, int8_t beta) {
     bool maximising = !state->current_player; // Player 0 for maximising, 1 for minimising
 
@@ -141,16 +152,16 @@ MinimaxNode minimax_inner(const GameState *state, uint8_t depth, uint8_t max_dep
     Action actions[COLORS];
     uint8_t n_valid_actions;
     get_actions(state, actions, &n_valid_actions);
-    
+
     assert(n_valid_actions != 0);
-    
+
     uint32_t n_reachable = 0;
     MinimaxNode *best_child = &children[0];
     for (int i = 0; i < n_valid_actions; i++) {
         MinimaxNode *child = &children[i];
         Action *action = &actions[i];
         if (action->tiles_increase == 0 && i != 0) {
-            n_valid_actions = i + 1;  // 0 actions are irrelevant, if not the only option
+            n_valid_actions = i + 1; // 0 actions are irrelevant, if not the only option
             break;
         }
 
@@ -175,45 +186,46 @@ MinimaxNode minimax(const GameState *state, uint8_t depth) {
     return minimax_inner(state, 0, depth, INT8_MIN, INT8_MAX);
 }
 
-//int main() {
-//    uint8_t colors[ROWS][COLS] = {
-//        {2, 4, 1, 0, 2, 0, 2, 4},
-//        {4, 2, 5, 3, 4, 2, 5, 1},
-//        {3, 1, 2, 1, 2, 3, 4, 3},
-//        {4, 5, 3, 5, 0, 5, 0, 2},
-//        {5, 0, 2, 3, 1, 3, 2, 3},
-//        {1, 3, 1, 0, 3, 2, 5, 1},
-//        {4, 2, 0, 2, 4, 1, 0, 5},
-//    };
-//    GameState state = create_game(colors, true);
+// int main() {
+//     uint8_t colors[ROWS][COLS] = {
+//         {2, 4, 1, 0, 2, 0, 2, 4},
+//         {4, 2, 5, 3, 4, 2, 5, 1},
+//         {3, 1, 2, 1, 2, 3, 4, 3},
+//         {4, 5, 3, 5, 0, 5, 0, 2},
+//         {5, 0, 2, 3, 1, 3, 2, 3},
+//         {1, 3, 1, 0, 3, 2, 5, 1},
+//         {4, 2, 0, 2, 4, 1, 0, 5},
+//     };
+//     GameState state = create_game(colors, true);
 //
-//    uint8_t actions[] = {};
-//    uint8_t n_actions = sizeof(actions) / sizeof(uint8_t);
-//    simulate_actions_sequence(&state, actions, n_actions);
-//    printf("Action history: ");
-//    for (int i = 0; i < n_actions; i++) {
-//        printf("%i ", actions[i]);
-//    }
-//    printf("\n");
-//    print_game(&state);
+//     uint8_t actions[] = {};
+//     uint8_t n_actions = sizeof(actions) / sizeof(uint8_t);
+//     simulate_actions_sequence(&state, actions, n_actions);
+//     printf("Action history: ");
+//     for (int i = 0; i < n_actions; i++) {
+//         printf("%i ", actions[i]);
+//     }
+//     printf("\n");
+//     print_game(&state);
 //
-//    clock_t start = clock();
-//    MinimaxNode terminal = minimax(&state, 56);
-//    double elapsed = (double)(clock() - start) / CLOCKS_PER_SEC;
-//    printf("-=-=-=-=-=-\n");
-//    printf("%.2lfm states, %.3f sec\n", terminal.n_reachable / 1e6, elapsed);
-//    // printf("Max tiles occupied: %i\n", max_tiles_occupied);
-//    printf("Game Ended (moves=%i, score=%i) <- ", terminal.n_actions, terminal.score);
-//    for (int i = 0; i < terminal.n_actions; i++) {
-//        printf("%i ", terminal.actions_trace[i]);
-//    }
-//    printf("\n");
+//     clock_t start = clock();
+//     MinimaxNode terminal = minimax(&state, 56);
+//     double elapsed = (double)(clock() - start) / CLOCKS_PER_SEC;
+//     printf("-=-=-=-=-=-\n");
+//     printf("%.2lfm states, %.3f sec\n", terminal.n_reachable / 1e6, elapsed);
+//     // printf("Max tiles occupied: %i\n", max_tiles_occupied);
+//     printf("Game Ended (moves=%i, score=%i) <- ", terminal.n_actions, terminal.score);
+//     for (int i = 0; i < terminal.n_actions; i++) {
+//         printf("%i ", terminal.actions_trace[i]);
+//     }
+//     printf("\n");`
 //
-//    return 0;
-//}
+//     return 0;
+// }
 
+int main() {
+}
 
 void test_print(int kek) {
     printf("%i", kek);
 }
-

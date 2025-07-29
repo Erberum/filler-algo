@@ -7,7 +7,6 @@ from libc.string cimport memcpy
 
 from filler_algo.python_src.game import Color
 
-
 cdef extern from "minimax.h":
     DEF ROWS = 7
     DEF COLS = 8
@@ -35,9 +34,9 @@ cdef extern from "minimax.h":
 
 cdef class PyGameStateWrapper:
     cdef GameState * c_state;
-
+    
     @staticmethod
-    def __c_create_game_state(board: list[list[Color]], second_player_starts: bint = False):
+    cdef GameState __c_create_game_state(board: list[list[Color]], second_player_starts: bint = False):
         # Convert python 2D board to C array
         cdef uint8_t c_board[ROWS][COLS]
         assert len(board) == ROWS, f'Game board must have {ROWS} rows, got {len(board)}'
@@ -45,11 +44,10 @@ cdef class PyGameStateWrapper:
             assert len(board[row]) == COLS, f'Board must have {COLS} columns, got {len(board[row])}'
             for col in range(COLS):
                 c_board[row][col] = board[row][col].value
-
         return create_game(c_board, second_player_starts)
 
     def __cinit__(self, board: list[list[Color]], second_player_starts = False):
-        cdef GameState tmp = self.__c_create_game_state(board, second_player_starts)
+        cdef GameState tmp = PyGameStateWrapper.__c_create_game_state(board, second_player_starts)
         self.c_state = <GameState *> malloc(sizeof(GameState))
         if not self.c_state:
             raise MemoryError('Failed to allocate GameState')
