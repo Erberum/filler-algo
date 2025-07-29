@@ -1,6 +1,6 @@
 # filler-algo
 
-Algorithmic solver for the Filler problem (state space >3e+32) ([Rules](#filler-problem-rules))
+Perfect algorithmic solver for the Filler problem (state space >3e+32) ([Rules](#filler-problem-rules))
 
 ## Overview & Performance
 
