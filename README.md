@@ -4,9 +4,9 @@ Algorithmic solver for the Filler game (state space >3e+32) ([Rules](#filler-gam
 
 ## Overview & Performance
 
-Minimax search is used to find the optimal solution.
-Full-depth search (~30 turns, ~1e+7 states after pruning) runs in 1 second on M1 Pro using the following
-optimizations:
+Full-depth minimax search (~30 turns, ~1e+7 states after pruning) is used to find mathematically perfect solution.
+
+Runs in ~1 second on M1 Pro using the following optimizations:
 
 - Alpha-Beta Pruning with move-ordering heuristics
 - Pruning of mathematically irrelevant branches
@@ -14,7 +14,7 @@ optimizations:
 - Hardware acceleration with POPCNT
 - Branch prediction optimizations
 - Structs memory alignment
-- ~~Multi-threading~~ (removed - it conflicts with alpha-beta pruning and decreases performance)
+- ~~Multi-threading~~ (removed as it conflicts with alpha-beta pruning and decreases performance)
 
 ### Additional features
 
