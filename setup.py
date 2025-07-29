@@ -6,6 +6,6 @@ setup(
     ext_modules=cythonize([
         Extension('filler_algo.c_src.minimax',
                   ['src/filler_algo/c_src/minimax.c', 'src/filler_algo/c_src/minimax_wrapper.pyx'],
-                  extra_compile_args=['-Wall', '-Ofast'])
+                  extra_compile_args=['-Wall', '-O3', '-ffast-math'])
     ])
 )
