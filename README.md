@@ -1,6 +1,6 @@
 # filler-algo
 
-Algorithmic solver for the Filler game (state space >3e+32) ([Rules](#filler-game-rules))
+Algorithmic solver for the Filler problem (state space >3e+32) ([Rules](#filler-problem-rules))
 
 ## Overview & Performance
 
@@ -46,10 +46,15 @@ pip install -e .
 filler-solve
 ```
 
-## Filler game rules
+## Problem rules
 
 - 8×7 board with random colors
 - Two players start in opposite corners
 - Players alternate choosing one of six colors
 - Selecting a color expands their territory to adjacent cells of that color
 - Goal: control the largest area by the end
+
+## Credits
+
+- [YouTube. Algorithm by JoeCoup, only 8 layers deep search, Cool interface with StockFish-like evaluation bar.](https://www.youtube.com/watch?v=7EH1QzzXKM0)
+- [GitHub. Algorithm by ItsAsShrimpleAsThat, 20 layers deep, cool web gui, Iterative Deepening, Quiescence Search with limit.](https://github.com/ItsAsShrimpleAsThat/FillerSolver)
