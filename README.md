@@ -16,7 +16,7 @@ Runs in ~1 second on M1 Pro using the following optimizations:
 - Structs memory alignment
 - ~~Multi-threading~~ (removed as it conflicts with alpha-beta pruning and decreases performance)
 
-### Additional features
+### Extra features
 
 - **Board recognition** through Python **OpenCV**
 
