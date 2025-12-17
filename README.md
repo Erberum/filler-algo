@@ -13,7 +13,6 @@ Runs in ~1 second on M1 Pro using the following optimizations:
 - Bitboards & precomputed masks for board manipulation
 - Hardware acceleration with POPCNT
 - Branch prediction optimizations
-- Structs memory alignment
 - ~~Multi-threading~~ (removed as it conflicts with alpha-beta pruning and decreases performance)
 
 ### Extra features
